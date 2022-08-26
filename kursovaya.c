@@ -69,6 +69,8 @@ Note *get_strs(FILE *f){
     int level = 0;
     int catnum = 0;
     int line = 0;
+
+	buff[1] = '\0';
     while((ch = fgetc(f)) != EOF){
         if(ch == '\n'){
         	line++;
@@ -94,6 +96,9 @@ Note *get_strs(FILE *f){
     note->lines = snum;
 	note->catnum = catnum;
 	note->list = (char**) malloc(snum * sizeof(char*));
+	note->llen = (int*) malloc(size);
+	memcpy(note->llen, len, size);
+	memcpy(note->list, strarr, snum * sizeof(char*));
     free(len);
 	return note;
 }
