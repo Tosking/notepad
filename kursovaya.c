@@ -41,7 +41,7 @@ int get_strnum(FILE *f){
 	return strnum;
 }
 
-void get_strs(FILE *f, Note *note){
+Note *get_strs(FILE *f){
 	char ch;
 	int size = get_strnum(f) * sizeof(int);
 	int *len = malloc(size);
@@ -63,6 +63,7 @@ void get_strs(FILE *f, Note *note){
         memset(strarr[i], 0, len[i]);
     }
     snum = 0;
+	Note *note = (Note*)malloc(sizeof(Note));
     char buff[2];
     char categ[3];
     int level = 0;
@@ -92,18 +93,18 @@ void get_strs(FILE *f, Note *note){
     }
     note->lines = snum;
 	note->catnum = catnum;
-	note->llen = malloc(size);
-	memcpy(note->llen, len, size);
+	note->list = (char**) malloc(snum * sizeof(char*));
     free(len);
+	return note;
 }
 
 
 
-void show_list(FILE *f, Note note){
+void show_list(FILE *f, Note *note){
 	clear_win();
 	char ch;
-    for(int i = 0; i < note.lines; i++){
-        printf("%d. %s", i, note.list[i]);
+    for(int i = 0; i < note->lines; i++){
+        printf("%d. %s", i, note->list[i]);
     }
 	enter_press();
 }
@@ -204,10 +205,9 @@ int main(int argc, char **argv){
         return 1;
     }
     FILE *f;
-    Note note;
 	const char *SAVE = "list";
 	f = fopen(SAVE, "ab+");
-	get_strs(f, &note);
+    Note *note = get_strs(f);
 	fclose(f);
 	bool run = 1;
 	while(run){
@@ -223,7 +223,7 @@ int main(int argc, char **argv){
 				show_list(f, note);
 				break;
 			case 2:
-				add_item(f, &note);
+				add_item(f, note);
 				break;
 			case 3:
 				clear_win();
@@ -238,7 +238,7 @@ int main(int argc, char **argv){
 				int start_num, end_num;
 				char name[100]; 
 				scanf("%d%d%s", &start_num, &end_num, &name);
-				create_category(f, start_num, end_num, name, SAVE, &note);
+				create_category(f, start_num, end_num, name, SAVE, note);
 				break;
 			case 5:
 				clear_win();
