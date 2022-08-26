@@ -95,8 +95,8 @@ Note *get_strs(FILE *f){
     }
     note->lines = snum;
 	note->catnum = catnum;
-	note->list = (char**) malloc(snum * sizeof(char*));
-	note->llen = (int*) malloc(size);
+	note->list = (char**) malloc((snum + 2) * sizeof(char*));
+	note->llen = (int*) malloc(size + sizeof(int) * 2);
 	memcpy(note->llen, len, size);
 	memcpy(note->list, strarr, snum * sizeof(char*));
     free(len);
@@ -125,8 +125,8 @@ void show_menu(){
 void add_item(FILE *f, Note *note){
 	clear_win();
 	printf("Type item:");
-	char buffer[100];
-	scanf("%s", &buffer);
+	char *buffer = (char*) malloc(sizeof(char) * 100);
+	scanf("%s", buffer);
 	if(strlen(buffer) == 0){
 		printf("Item is empty!\n");
 		enter_press();
@@ -136,15 +136,14 @@ void add_item(FILE *f, Note *note){
 	time(&curtime);
 	strcat(buffer, " (");
 	strcat(buffer, ctime(&curtime));
-	memmove(&buffer[strlen(buffer)-1], &buffer[strlen(buffer)], strlen(buffer) - 2);
+	buffer[strlen(buffer)-1] = '\0';
 	strcat(buffer, ")\n");
 	int size = 0;
 	for(int i = 0; i < note->lines; i++){
 		size += note->llen[i];
 	}
 	note->lines++;
-	realloc(note->list, size + strlen(buffer) * sizeof(char));
-	memcpy(note->list[note->lines - 1], buffer, strlen(buffer));
+	note->list[note->lines - 1] = buffer;
 }
 
 void delete_item(FILE *f, int num, const char *SAVE){
