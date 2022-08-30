@@ -65,7 +65,7 @@ Note *get_strs(FILE *f){
     snum = 0;
 	Note *note = (Note*)malloc(sizeof(Note));
     char buff[2];
-    char categ[3];
+    char *categ = malloc(sizeof(char) * 3);
     int level = 0;
     int catnum = 0;
     int line = 0;
@@ -74,7 +74,14 @@ Note *get_strs(FILE *f){
     while((ch = fgetc(f)) != EOF){
         if(ch == '\n'){
         	line++;
-            fgets(categ, 3, f);
+			strcat(strarr[snum], "\n");
+			for(int i = 0; i < 3; i++){
+				if((ch = fgetc(f)) != EOF) categ[i] = ch;
+				else {
+					realloc(categ, sizeof(char));
+					categ[0] = '\0';
+				}
+			}
             if(categ == ":::"){
                 catnum++;
 				level++;
@@ -85,18 +92,20 @@ Note *get_strs(FILE *f){
 				note->categ[level][1] = line;
 				level--;
 			}
-            strcat(strarr[snum], categ);
-            snum++;
+			snum++;
+			if(categ[0] != '\0'){
+				strcat(strarr[snum], categ);
+			}
         }
         else{
             buff[0] = ch;
-            strcat(strarr[snum], buff);
+			strcat(strarr[snum], buff);
         }
     }
     note->lines = snum;
 	note->catnum = catnum;
-	note->list = (char**) malloc((snum + 2) * sizeof(char*));
-	note->llen = (int*) malloc(size + sizeof(int) * 2);
+	note->list = (char**) malloc(snum * sizeof(char*));
+	note->llen = (int*) malloc(size);
 	memcpy(note->llen, len, size);
 	memcpy(note->list, strarr, snum * sizeof(char*));
     free(len);
@@ -122,7 +131,7 @@ void show_menu(){
 			\n4.Create a category");
 }
 
-void add_item(FILE *f, Note *note){
+void add_item(Note *note){
 	clear_win();
 	printf("Type item:");
 	char *buffer = (char*) malloc(sizeof(char) * 100);
@@ -146,25 +155,12 @@ void add_item(FILE *f, Note *note){
 	note->list[note->lines - 1] = buffer;
 }
 
-void delete_item(FILE *f, int num, const char *SAVE){
-	char ch;
-	int line = 1;
-	int size = get_fsize(f);
-	char *list = (char*)malloc(size);
-	char buf[2];
-	while((ch = fgetc(f)) != EOF){
-		if(ch == '\n'){
-			line++;
-			continue;
-		}
-		if(line == num)	continue;		
-		buf[0] = ch;
-		strcat(list, buf);
+void delete_item(int num, Note *note){
+	note->lines--;
+	free(note->list[num]);
+	for(int i = num; i < note->lines; i++){
+		note->list[i] = note->list[i+1];
 	}
-	fclose(f);
-	f = fopen(SAVE, "w");
-	fputs(list, f);
-	free(list);
 }
 
 void create_category(FILE *f, int start_num, int end_num, char *name, const char *SAVE, Note *note){
@@ -203,6 +199,14 @@ void delete_category(FILE* f, char* name, const char *SAVE){
 	free(list);
 }
 
+void save_list(FILE *f, Note *note, const char *SAVE){
+	fclose(f);
+	f = fopen(SAVE, "w");
+	for(int i = 0; i < note->lines; i++){
+		fputs(note->list[i], f);
+	}
+}
+
 int main(int argc, char **argv){
     if(argc == 0){
         printf("No file input");
@@ -227,14 +231,14 @@ int main(int argc, char **argv){
 				show_list(f, note);
 				break;
 			case 2:
-				add_item(f, note);
+				add_item(note);
 				break;
 			case 3:
 				clear_win();
 				printf("Enter a number of item, that you want to delete:");
 				int number;
 				scanf("%d", &number);
-				delete_item(f, number, SAVE);
+				delete_item(number, note);
 				break;
 			case 4:
 				clear_win();
@@ -252,6 +256,7 @@ int main(int argc, char **argv){
 				delete_category(f, name, SAVE);
 				break;
 		}
+		save_list(f, note, SAVE);
 		fclose(f);
 	}
 }
