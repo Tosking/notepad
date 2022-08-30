@@ -170,14 +170,26 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 		return;
 	}
 	char ch;
-	int lines = get_strnum(f) + 2;
+	int lines = note->lines + 2;
 	bool steps = 0;
-	realloc(note->list, note->lines * sizeof(char));
     for(int i = 0; i < lines; i++){
-        if(1);
+        if(start_num == i){
+			realloc(note->list, lines * sizeof(char*));
+			for(int k = lines; k >= i; k--) {
+				note->list[k + 1] = note->list[k];
+			}
+			free(note->list[i]);
+			note->list[i] = (char*)malloc(sizeof(char) * (strlen(name) + 5));
+			strcat(note->list[i], ":::");
+			strcat(note->list[i], name);
+			strcat(note->list[i], "\n");
+		}
+		else if(end_num == i){
+			for(int k = lines; k >= i; k--) note->list[k + 1] = note->list[k];
+			note->list[i] = malloc(sizeof(char) *  + 3);
+			strcat(note->list[i], "---");
+		}
     }
-	fclose(f);
-	f = fopen(SAVE, "w");
 }
 
 void delete_category(FILE* f, char* name, const char *SAVE){
