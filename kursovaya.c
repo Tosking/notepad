@@ -171,24 +171,26 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 		return;
 	}
 	char ch;
-	int lines = note->lines + 2;
+	note->lines += 2;
 	bool steps = 0;
-    for(int i = 0; i < lines; i++){
+	
+    for(int i = 0; i < note->lines; i++){
         if(start_num == i){
-			for(int k = lines; k >= i; k--) {
+			for(int k = note->lines; k >= i; k--) {
 				note->list[k + 1] = note->list[k];
 			}
-			note->list[i] = (char*)malloc(sizeof(char) * (strlen(name) + 5));
-			memset(note->list[i], 0, sizeof(char) * (strlen(name) + 5));
+			note->list[i] = (char*)malloc(sizeof(char) * (strlen(name) + 3));
+			memset(note->list[i], 0, sizeof(char) * (strlen(name) + 3));
 			strcat(note->list[i], ":::");
 			strcat(note->list[i], name);
 			strcat(note->list[i], "\n");
 		}
 		else if(end_num == i){
-			for(int k = lines; k >= i; k--) note->list[k + 1] = note->list[k];
-			note->list[i] = malloc(sizeof(char) * 3);
-			memset(note->list[i], 0, sizeof(char) * 3);
+			for(int k = note->lines; k >= i; k--) note->list[k + 1] = note->list[k];
+			note->list[i] = malloc(sizeof(char) * 4);
+			memset(note->list[i], 0, sizeof(char) * 4);
 			strcat(note->list[i], "---");
+			strcat(note->list[i], "\n");
 		}
     }
 }
@@ -216,7 +218,7 @@ void save_list(FILE *f, Note *note, const char *SAVE){
 	fclose(f);
 	f = fopen(SAVE, "w");
 	for(int i = 0; i < note->lines; i++){
-		fputs(note->list[i], f);
+		fprintf(f, "%s", note->list[i]);
 	}
 }
 
