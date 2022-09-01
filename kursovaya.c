@@ -80,6 +80,7 @@ Note *get_strs(FILE *f){
 				else {
 					realloc(categ, sizeof(char));
 					categ[0] = '\0';
+					break;
 				}
 			}
             if(categ == ":::"){
@@ -88,7 +89,7 @@ Note *get_strs(FILE *f){
                 realloc(note->categ, catnum * 2 * sizeof(int));
                 note->categ[level][0] = line;
             }
-			if(categ == "---"){
+			else if(categ == "---"){
 				note->categ[level][1] = line;
 				level--;
 			}
@@ -174,19 +175,19 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 	bool steps = 0;
     for(int i = 0; i < lines; i++){
         if(start_num == i){
-			realloc(note->list, lines * sizeof(char*));
 			for(int k = lines; k >= i; k--) {
 				note->list[k + 1] = note->list[k];
 			}
-			free(note->list[i]);
 			note->list[i] = (char*)malloc(sizeof(char) * (strlen(name) + 5));
+			memset(note->list[i], 0, sizeof(char) * (strlen(name) + 5));
 			strcat(note->list[i], ":::");
 			strcat(note->list[i], name);
 			strcat(note->list[i], "\n");
 		}
 		else if(end_num == i){
 			for(int k = lines; k >= i; k--) note->list[k + 1] = note->list[k];
-			note->list[i] = malloc(sizeof(char) *  + 3);
+			note->list[i] = malloc(sizeof(char) * 3);
+			memset(note->list[i], 0, sizeof(char) * 3);
 			strcat(note->list[i], "---");
 		}
     }
