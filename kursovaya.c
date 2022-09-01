@@ -3,8 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-#define clear_win() system("clear")
+#if defined(unix) || defined(__unix__) || defined(__unix)
+	#define clear_win() system("clear")
+#elif defined(_WIN32)
+	#define clear_win() system("cls")
+#endif
 
 typedef struct {
     char **list;
