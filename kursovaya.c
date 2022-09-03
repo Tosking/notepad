@@ -13,7 +13,7 @@ typedef struct {
     char **list;
     int lines;
 	int *llen;
-    int *categ[2];
+    int **categ;
     int catnum;
 } Note;
 
@@ -67,6 +67,7 @@ Note *get_strs(FILE *f){
     }
     snum = 0;
 	Note *note = (Note*)malloc(sizeof(Note));
+	note->categ = (int**) malloc(sizeof(int*));
     char buff[2];
     char *categ = malloc(sizeof(char) * 3);
     int level = 0;
@@ -89,11 +90,12 @@ Note *get_strs(FILE *f){
             if(categ == ":::"){
                 catnum++;
 				level++;
-                realloc(note->categ, catnum * 2 * sizeof(int));
-                note->categ[level][0] = line;
+                note->categ = realloc(note->categ, catnum * 2 * sizeof(int*));
+				note->categ[catnum] = malloc(sizeof(int) * 2);
+                note->categ[catnum][0] = line;
             }
 			else if(categ == "---"){
-				note->categ[level][1] = line;
+				note->categ[catnum][1] = line;
 				level--;
 			}
 			snum++;
@@ -196,6 +198,18 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 			strcat(note->list[i], "\n");
 		}
     }
+	note->catnum++;
+	if(note->catnum != 1){
+		note->categ = (int**) realloc(note->categ, note->catnum * sizeof(int*));
+		note->categ[note->catnum - 1][0] = start_num;
+		note->categ[note->catnum - 1][1] = end_num;
+	}
+	else{
+		note->categ = (int**) malloc(sizeof(int*));
+		note->categ[0] = malloc(sizeof(int) * 2);
+		note->categ[0][0] = start_num;
+		note->categ[0][1] = end_num;
+	}
 }
 
 void delete_category(FILE* f, char* name, const char *SAVE){
