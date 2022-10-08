@@ -175,6 +175,12 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 		enter_press();
 		return;
 	}
+	if (start_num < 0 || end_num > note->lines){
+		printf("Start number lower than 0 or end number larger than lines in list");
+		enter_press();
+		return;
+	}
+
 	char ch;
 	note->lines += 2;
 	bool steps = 0;
@@ -206,7 +212,7 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 	}
 	else{
 		note->categ = (int**) malloc(sizeof(int*));
-		note->categ[0] = malloc(sizeof(int) * 2);
+		note->categ[0] = (int *) malloc(sizeof(int) * 2);
 		note->categ[0][0] = start_num;
 		note->categ[0][1] = end_num;
 	}
