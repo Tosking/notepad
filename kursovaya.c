@@ -65,6 +65,7 @@ Note *get_strs(FILE *f){
         strarr[i] = (char*)malloc(sizeof(char) * len[i]);
         memset(strarr[i], 0, len[i]);
     }
+	int temp_num = snum;
     snum = 0;
 	Note *note = (Note*)malloc(sizeof(Note));
 	note->categ = (int**) malloc(sizeof(int*));
@@ -115,6 +116,7 @@ Note *get_strs(FILE *f){
 	memcpy(note->llen, len, size);
 	memcpy(note->list, strarr, snum * sizeof(char*));
     free(len);
+	free(strarr);
 	return note;
 }
 
@@ -198,7 +200,7 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 		}
 		else if(end_num == i){
 			for(int k = note->lines; k >= i; k--) note->list[k + 1] = note->list[k];
-			note->list[i] = malloc(sizeof(char) * 4);
+			note->list[i] = (char *) malloc(sizeof(char) * 4);
 			memset(note->list[i], 0, sizeof(char) * 4);
 			strcat(note->list[i], "---");
 			strcat(note->list[i], "\n");
