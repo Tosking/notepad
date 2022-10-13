@@ -46,24 +46,25 @@ int get_strnum(FILE *f){
 
 Note *get_strs(FILE *f){
 	char ch;
-	int size = get_strnum(f) * sizeof(int);
-	int *len = malloc(size);
-    len[0] = 0;
-	int snum = 0;
+	int size = (get_strnum(f) + 10) * sizeof(int);
+	int *llen = (int*)malloc(size);
+	memset(llen, 0, size);
+    llen[0] = 0;
+	int snum = 1;
 	while((ch = fgetc(f)) != EOF){
 		if(ch == '\n'){
 			snum++;
-            len[snum] = 0;
+            llen[snum] = 1;
 		}
 		else {
-			len[snum]++;
+			llen[snum]++;
 		}
 	}
     rewind(f);
-    char **strarr = (char**)malloc(sizeof(char*) * snum);
+    char **strarr = (char**)malloc(sizeof(char*) * (snum + 1));
     for(int i = 0; i < snum; i++){
-        strarr[i] = (char*)malloc(sizeof(char) * len[i]);
-        memset(strarr[i], 0, len[i]);
+        strarr[i] = (char*)malloc(sizeof(char) * llen[i]);
+        memset(strarr[i], 0, llen[i] * sizeof(char));
     }
 	int temp_num = snum;
     snum = 0;
@@ -79,6 +80,7 @@ Note *get_strs(FILE *f){
     while((ch = fgetc(f)) != EOF){
         if(ch == '\n'){
         	line++;
+			snum++;
 			strcat(strarr[snum], "\n");
 			for(int i = 0; i < 3; i++){
 				if((ch = fgetc(f)) != EOF) categ[i] = ch;
@@ -113,10 +115,11 @@ Note *get_strs(FILE *f){
 	note->catnum = catnum;
 	note->list = (char**) malloc(snum * sizeof(char*));
 	note->llen = (int*) malloc(size);
-	memcpy(note->llen, len, size);
+	memcpy(note->llen, llen, size);
 	memcpy(note->list, strarr, snum * sizeof(char*));
-    free(len);
 	free(strarr);
+    free(llen);
+	free(categ);
 	return note;
 }
 
