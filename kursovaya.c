@@ -75,10 +75,10 @@ Note *get_strs(FILE *f){
     int level = 0;
     int catnum = 0;
     int line = 0;
-
+	rewind(f);
 	buff[1] = '\0';
     while((ch = fgetc(f)) != EOF){
-        if(ch == '\n'){
+        if(ch == '\n' || !snum){
         	line++;
 			snum++;
 			strcat(strarr[snum], "\n");
