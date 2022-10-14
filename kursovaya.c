@@ -8,7 +8,7 @@
 #elif defined(_WIN32)
 	#define clear_win() system("cls")
 #endif
-
+#test
 typedef struct {
     char **list;
     int lines;
