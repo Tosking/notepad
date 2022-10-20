@@ -54,10 +54,10 @@ Note *get_strs(FILE *f){
 	while((ch = fgetc(f)) != EOF){
 		if(ch == '\n' && (strs - 1) > snum){
 			snum++;
-            len[snum] = 0;
+            llen[snum] = 1;
 		}
 		else {
-			len[snum]++;
+			llen[snum]++;
 		}
 	}
     rewind(f);
@@ -75,11 +75,12 @@ Note *get_strs(FILE *f){
     int level = 0;
     int catnum = 0;
     int line = 0;
-
+	rewind(f);
 	buff[1] = '\0';
     while((ch = fgetc(f)) != EOF){
-        if(ch == '\n'){
+        if(ch == '\n' || !snum){
         	line++;
+			snum++;
 			strcat(strarr[snum], "\n");
 			for(int i = 0; i < 3; i++){
 				if((ch = fgetc(f)) != EOF) categ[i] = ch;
@@ -114,10 +115,11 @@ Note *get_strs(FILE *f){
 	note->catnum = catnum;
 	note->list = (char**) malloc(snum * sizeof(char*));
 	note->llen = (int*) malloc(size);
-	memcpy(note->llen, len, size);
+	memcpy(note->llen, llen, size);
 	memcpy(note->list, strarr, snum * sizeof(char*));
-    free(len);
 	free(strarr);
+    free(llen);
+	free(categ);
 	return note;
 }
 
