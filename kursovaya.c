@@ -46,12 +46,13 @@ int get_strnum(FILE *f){
 
 Note *get_strs(FILE *f){
 	char ch;
-	int size = get_strnum(f) * sizeof(int);
-	int *len = malloc(size);
+	int strs = get_strnum(f);
+	int size = strs * sizeof(int);				
+	int *len = (int*) malloc(size);
     len[0] = 0;
 	int snum = 0;
 	while((ch = fgetc(f)) != EOF){
-		if(ch == '\n'){
+		if(ch == '\n' && (strs - 1) > snum){
 			snum++;
             len[snum] = 0;
 		}
@@ -60,17 +61,17 @@ Note *get_strs(FILE *f){
 		}
 	}
     rewind(f);
-    char **strarr = (char**)malloc(sizeof(char*) * snum);
+    char **strarr = (char**) malloc(sizeof(char*) * snum);
     for(int i = 0; i < snum; i++){
-        strarr[i] = (char*)malloc(sizeof(char) * len[i]);
+        strarr[i] = (char*) malloc(sizeof(char) * len[i]);
         memset(strarr[i], 0, len[i]);
     }
 	int temp_num = snum;
     snum = 0;
-	Note *note = (Note*)malloc(sizeof(Note));
+	Note *note = (Note*) malloc(sizeof(Note));
 	note->categ = (int**) malloc(sizeof(int*));
     char buff[2];
-    char *categ = malloc(sizeof(char) * 3);
+    char *categ = (char*) malloc(sizeof(char) * 3);
     int level = 0;
     int catnum = 0;
     int line = 0;
