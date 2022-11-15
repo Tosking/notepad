@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #if defined(unix) || defined(__unix__) || defined(__unix)
 	#define clear_win() system("clear")
 #elif defined(_WIN32)
@@ -49,77 +50,69 @@ Note *get_strs(FILE *f){
 	int strs = get_strnum(f);
 	int size = strs * sizeof(int);				
 	int *len = (int*) malloc(size);
-    len[0] = 0;
+    len[0] = 1;
 	int snum = 0;
 	while((ch = fgetc(f)) != EOF){
-		if(ch == '\n' && (strs - 1) > snum){
+		if(strs == (snum + 1)){
+			break;
+		}
+		if(ch == '\n'){
 			snum++;
-            llen[snum] = 1;
+            len[snum] = 1;
 		}
 		else {
-			llen[snum]++;
+			len[snum]++;
 		}
 	}
     rewind(f);
-    char **strarr = (char**) malloc(sizeof(char*) * snum);
-    for(int i = 0; i < snum; i++){
+    char **strarr = (char**) malloc(sizeof(char*) * strs);
+    for(int i = 0; i < strs; i++){
         strarr[i] = (char*) malloc(sizeof(char) * len[i]);
         memset(strarr[i], 0, len[i]);
     }
-	int temp_num = snum;
-    snum = 0;
 	Note *note = (Note*) malloc(sizeof(Note));
-	note->categ = (int**) malloc(sizeof(int*));
     char buff[2];
-    char *categ = (char*) malloc(sizeof(char) * 3);
-    int level = 0;
-    int catnum = 0;
     int line = 0;
 	rewind(f);
 	buff[1] = '\0';
     while((ch = fgetc(f)) != EOF){
-        if(ch == '\n' || !snum){
-        	line++;
-			snum++;
-			strcat(strarr[snum], "\n");
-			for(int i = 0; i < 3; i++){
-				if((ch = fgetc(f)) != EOF) categ[i] = ch;
-				else {
-					realloc(categ, sizeof(char));
-					categ[0] = '\0';
-					break;
-				}
-			}
-            if(categ == ":::"){
-                catnum++;
-				level++;
-                note->categ = realloc(note->categ, catnum * 2 * sizeof(int*));
-				note->categ[catnum] = malloc(sizeof(int) * 2);
-                note->categ[catnum][0] = line;
-            }
-			else if(categ == "---"){
-				note->categ[catnum][1] = line;
-				level--;
-			}
-			snum++;
-			if(categ[0] != '\0'){
-				strcat(strarr[snum], categ);
-			}
+        if(ch == '\n'){
+			buff[0] = ch;
+			strcat(strarr[line], buff);
+			line++;
+			if(line == strs)
+				break;
+			continue;
         }
-        else{
-            buff[0] = ch;
-			strcat(strarr[snum], buff);
-        }
+		buff[0] = ch;
+		strcat(strarr[line], buff);
     }
-    note->lines = snum;
-	note->catnum = catnum;
-	note->list = (char**) malloc(snum * sizeof(char*));
+	FILE *conf = fopen("./.noteconf", "r");
+	if(conf != NULL){
+		fscanf(conf, "%d", &note->catnum);
+		note->categ = (int**) malloc(sizeof(int*));
+		note->categ[0] = (int*) malloc(sizeof(int));
+		for(int i = 0; i < note->catnum; i++){
+			fscanf(conf, "%d %d", &note->categ[i][0], &note->categ[i][1]);
+			int **temp = (int**) realloc(note->categ, sizeof(int*) * (i + 1));
+			if(temp != NULL){
+				note->categ = temp;
+				note->categ[i+1] = (int*) malloc(sizeof(int));
+			}
+			else{
+				fclose(conf);
+				return NULL;
+			}
+		}
+		fclose(conf);
+	}
+    note->lines = strs;
+	note->list = (char**) malloc(strs * sizeof(char*));
 	note->llen = (int*) malloc(size);
-	memcpy(note->llen, llen, size);
-	memcpy(note->list, strarr, snum * sizeof(char*));
+	memcpy(note->llen, len, size);
+	memcpy(note->list, strarr, strs * sizeof(char*));
 	free(strarr);
-    free(llen);
-	free(categ);
+    free(len);
 	return note;
 }
 
@@ -248,6 +241,16 @@ void save_list(FILE *f, Note *note, const char *SAVE){
 	for(int i = 0; i < note->lines; i++){
 		fprintf(f, "%s", note->list[i]);
 	}
+
+	FILE *conf = fopen("./.noteconf", "w");
+	char *temp = (char*) malloc(note->catnum * sizeof(char));
+	sprintf(temp, "%d", note->catnum);
+	fputs(temp, conf);
+	for(int i = 0; i < note->catnum; i++){
+		fprintf(conf, " %d %d", note->categ[i][0], note->categ[i][1]);
+	}
+	fclose(conf);
+	free(temp);
 }
 
 int main(int argc, char **argv){
@@ -259,6 +262,9 @@ int main(int argc, char **argv){
 	const char *SAVE = "list";
 	f = fopen(SAVE, "ab+");
     Note *note = get_strs(f);
+	if(note == NULL){
+		
+	}
 	fclose(f);
 	bool run = 1;
 	while(run){
@@ -269,6 +275,7 @@ int main(int argc, char **argv){
 		}
 		show_menu();
 		scanf("%d", &var);
+		clear_win();
 		switch (var){
 			case 1:
 				show_list(f, note);
@@ -277,14 +284,12 @@ int main(int argc, char **argv){
 				add_item(note);
 				break;
 			case 3:
-				clear_win();
 				printf("Enter a number of item, that you want to delete:");
 				int number;
 				scanf("%d", &number);
 				delete_item(number, note);
 				break;
 			case 4:
-				clear_win();
 				printf("Enter a numbers where category starts and ends, and a name of the category:");
 				int start_num, end_num;
 				char name[100]; 
@@ -292,7 +297,6 @@ int main(int argc, char **argv){
 				create_category(f, start_num, end_num, name, SAVE, note);
 				break;
 			case 5:
-				clear_win();
 				printf("Enter the name of a category than you want do delete");
 				memset(name, 0, 100);
 				scanf("%s", &name);
