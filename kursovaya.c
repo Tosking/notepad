@@ -216,23 +216,28 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 	}
 }
 
-void delete_category(FILE* f, char* name, const char *SAVE){
-	bool is_nl = 0;
-	bool is_in_cat = 0;
-	char ch;
-	int name_size = strlen(name);
-	char chcat[2];
-	char *buff = malloc(name_size);
-	memset(buff, 0, name_size);
-	char *list = malloc(get_fsize(f));
-	memset(list, 0, get_fsize(f));
-	
-
-	fclose(f);
-	f = fopen(SAVE, "w");
-	fputs(list, f);
-	free(buff);
-	free(list);
+void delete_category(FILE* f, char* name, Note *note){
+	int *coords = (int*) malloc(sizeof(int) * 2);
+	int found = 0;
+	for(int i = 0; i < note->catnum; i++){
+		for(int k = 0; k < strlen(name); k++){
+			if(note->list[note->categ[i][0]][k + 3] == name[k]){
+				found = 1;
+			}
+			else{
+				found = 0;
+				break;
+			}
+		}
+		if(found){
+			coords = &note->categ[i];
+			break;
+		}
+	}
+	note->lines -= 2;
+	free(note->list[coords[0]]);
+	free(note->list[coords[1]]);
+	free(coords);
 }
 
 void save_list(FILE *f, Note *note, const char *SAVE){
