@@ -132,11 +132,12 @@ void show_menu(){
 	printf("1.Show list \
 			\n2.Add item to a list \
 			\n3.Delete one item from list \
-			\n4.Create a category");
+			\n4.Create a category \
+			\n5.Delete category \
+			\n");
 }
 
 void add_item(Note *note){
-	clear_win();
 	printf("Type item:");
 	char *buffer = (char*) malloc(sizeof(char) * 100);
 	scanf("%s", buffer);
@@ -151,11 +152,18 @@ void add_item(Note *note){
 	strcat(buffer, ctime(&curtime));
 	buffer[strlen(buffer)-1] = '\0';
 	strcat(buffer, ")\n");
-	int size = 0;
-	for(int i = 0; i < note->lines; i++){
-		size += note->llen[i];
-	}
+
 	note->lines++;
+	char **temp = (char**) realloc(note->list, note->lines * sizeof(char*));
+	if(temp != NULL){
+		note->list = temp;
+	}
+	else{
+		printf("realloc failed\n");
+		free(buffer);
+		return;
+	}
+
 	note->list[note->lines - 1] = buffer;
 }
 
@@ -182,6 +190,15 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 	char ch;
 	note->lines += 2;
 	bool steps = 0;
+
+	char **temp = (char**) realloc(note->list, note->lines * sizeof(char*));
+	if(temp != NULL){
+		note->list = temp;
+	}
+	else{
+		printf("realloc failed\n");
+		return;
+	}
 	
     for(int i = 0; i < note->lines; i++){
         if(start_num == i){
@@ -218,26 +235,45 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 
 void delete_category(FILE* f, char* name, Note *note){
 	int *coords = (int*) malloc(sizeof(int) * 2);
-	int found = 0;
+	int found;
 	for(int i = 0; i < note->catnum; i++){
+		found = 1;
 		for(int k = 0; k < strlen(name); k++){
-			if(note->list[note->categ[i][0]][k + 3] == name[k]){
-				found = 1;
-			}
-			else{
+			if(note->list[note->categ[i][0]][k + 3] != name[k]){
 				found = 0;
 				break;
 			}
 		}
 		if(found){
-			coords = &note->categ[i];
+			memcpy(coords, &note->categ[i], sizeof(int) * 2);
 			break;
 		}
+		else{
+			coords = NULL;
+		}
 	}
-	note->lines -= 2;
+	if(coords == NULL){
+		printf("category with that name is not found\n");
+		return;
+	}
+
 	free(note->list[coords[0]]);
 	free(note->list[coords[1]]);
+
+	for(int i = 0; i < note->lines; i++){
+		if(i > coords[0] && i != coords[1]){
+			if(i > coords[1]){
+				note->list[i - 2] = note->list[i];
+			}
+			else{
+				note->list[i - 1] = note->list[i];
+			}
+		}
+	}
+
+	note->lines -= 2;
 	free(coords);
+
 }
 
 void save_list(FILE *f, Note *note, const char *SAVE){
@@ -302,10 +338,10 @@ int main(int argc, char **argv){
 				create_category(f, start_num, end_num, name, SAVE, note);
 				break;
 			case 5:
-				printf("Enter the name of a category than you want do delete");
+				printf("Enter the name of a category than you want do delete:");
 				memset(name, 0, 100);
 				scanf("%s", &name);
-				delete_category(f, name, SAVE);
+				delete_category(f, name, note);
 				break;
 		}
 		save_list(f, note, SAVE);
