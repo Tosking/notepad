@@ -5,12 +5,20 @@
 #include <time.h>
 #include <unistd.h>
 #include <mcheck.h>
+//Адаптация очистки терминала под Windows и Unix системы
 #if defined(unix) || defined(__unix__) || defined(__unix)
 	#define clear_win() system("clear") //system("clear")
 #elif defined(_WIN32)
 	#define clear_win() system("cls")
 #endif
 
+/*
+list - сам лист
+lines - количество строк
+llen - длина каждой строки
+categ - массив с координатами каждой категории
+catnum - количество категорий
+*/
 typedef struct {
     char **list;
     int lines;
@@ -19,6 +27,7 @@ typedef struct {
     int catnum;
 } Note;
 
+//ожидание нажатия Enter от пользователя
 void enter_press(){
 	printf("Press [Enter] key to continue.\n");
 	fflush(stdin);
@@ -26,6 +35,7 @@ void enter_press(){
 	getchar();
 }
 
+//получение размера файла
 int get_fsize(FILE *f){
 	fseek(f, 0, SEEK_END);
 	int size = ftell(f);
@@ -33,6 +43,7 @@ int get_fsize(FILE *f){
     return size;
 }
 
+//получение кол-ва строк
 int get_strnum(FILE *f){
 	char ch;
 	int strnum = 0;
@@ -45,7 +56,7 @@ int get_strnum(FILE *f){
 	rewind(f);
 	return strnum;
 }
-
+//Парсинг сохраненных файлов
 Note *get_strs(FILE *f){
 	char ch;
 	int strs = get_strnum(f);
@@ -53,6 +64,7 @@ Note *get_strs(FILE *f){
 	int *len = (int*) malloc(size);
     len[0] = 1;
 	int snum = 0;
+	//подсчет длин строк для веделения памяти
 	while((ch = fgetc(f)) != EOF){
 		if(strs == snum + 1){
 			break;
@@ -66,12 +78,14 @@ Note *get_strs(FILE *f){
 		}
 	}
     rewind(f);
+	//выделение памяти под строки
     char **strarr = (char**) malloc(sizeof(char*) * (strs + 1));
     for(int i = 0; i < strs; i++){
         strarr[i] = (char*) malloc(sizeof(char) * len[i] + 10);
         memset(strarr[i], 0, len[i] - 1);
     }
 	Note *note = (Note*) malloc(sizeof(Note));
+	//запись строк в структуру
     char buff[2];
     int line = 0;
 	rewind(f);
@@ -88,6 +102,7 @@ Note *get_strs(FILE *f){
 		buff[0] = ch;
 		strcat(strarr[line], buff);
     }
+	//запись сохраненных координат категорий в структуру
 	FILE *conf = fopen("./.noteconf", "r");
 	if(conf != NULL){
 		fscanf(conf, "%d", &note->catnum);
@@ -116,7 +131,7 @@ Note *get_strs(FILE *f){
 }
 
 
-
+//вывод листа на экран
 void show_list(FILE *f, Note *note){
 	clear_win();
 	char ch;
@@ -145,6 +160,7 @@ void add_item(Note *note){
 		enter_press();
 		return;
 	}
+	//добавление времени в конец строки
 	time_t curtime;
 	time(&curtime);
 	strcat(buffer, " (");
@@ -175,6 +191,7 @@ void delete_item(int num, Note *note){
 }
 
 void create_category(FILE *f, int start_num, int end_num, char *name, const char *SAVE, Note *note){
+	//проверки на корректность ввода
 	if(start_num >= end_num){
 		printf("Start number and end number is equal or start number is larger\n");
 		enter_press();
@@ -213,7 +230,7 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 			}
 		}
 	}
-	
+	//занесение категории в лист
     for(int i = 0; i < note->lines; i++){
         if(start_num == i){
 			for(int k = note->lines; k >= i; k--) {
@@ -234,6 +251,7 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 			strcat(note->list[i], "\n");
 		}
     }
+	//сохранение координат категории
 	note->catnum++;
 	if(note->catnum != 1){
 		note->categ = (int**) realloc(note->categ, note->catnum * sizeof(int*));
@@ -252,6 +270,7 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 void delete_category(FILE* f, char* name, Note *note){
 	int *coords = (int*) malloc(sizeof(int) * 2);
 	int found;
+	//поиск координат по имени
 	for(int i = 0; i < note->catnum; i++){
 		found = 1;
 		for(int k = 0; k < strlen(name); k++){
@@ -273,6 +292,7 @@ void delete_category(FILE* f, char* name, Note *note){
 		return;
 	}
 
+	//удаление категории
 	free(note->list[coords[0]]);
 	free(note->list[coords[1]]);
 
@@ -293,12 +313,13 @@ void delete_category(FILE* f, char* name, Note *note){
 }
 
 void save_list(FILE *f, Note *note, const char *SAVE){
+	//сохранение листа
 	fclose(f);
 	f = fopen(SAVE, "w");
 	for(int i = 0; i < note->lines; i++){
 		fprintf(f, "%s", note->list[i]);
 	}
-
+	//сохрание файла с категориями
 	FILE *conf = fopen("./.noteconf", "w");
 	char *temp = (char*) malloc(note->catnum * sizeof(char));
 	sprintf(temp, "%d", note->catnum);
