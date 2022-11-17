@@ -186,8 +186,9 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 		return;
 	}
 	for(int i = 0; i < note->catnum; i++){
-		if((note->categ[i][0] <= start_num && note->categ[i][1] >= start_num) || (note->categ[i][0] <= end_num && note->categ[i][1] >= end_num)){
+		if((note->categ[i][0] >= start_num && note->categ[i][1] <= start_num) || (note->categ[i][0] >= end_num && note->categ[i][1] <= end_num)){
 			printf("New category cannot cross other categories\n");
+			enter_press();
 			return;
 		}
 	}
@@ -206,9 +207,9 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 	//Смещение координат всех других категорий
 	if(note->catnum != 0){
 		for(int i = 0; i < note->catnum; i++){
-			if(note->categ[i][0] <= start_num){
-				note->categ[i][0]++;
-				note->categ[i][1]++;
+			if(note->categ[i][0] >= start_num){
+				note->categ[i][0] += 2;
+				note->categ[i][1] += 2;
 			}
 		}
 	}
