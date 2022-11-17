@@ -7,7 +7,7 @@
 #include <mcheck.h>
 //Адаптация очистки терминала под Windows и Unix системы
 #if defined(unix) || defined(__unix__) || defined(__unix)
-	#define clear_win() system("clear") //system("clear")
+	#define clear_win() system("clear")
 #elif defined(_WIN32)
 	#define clear_win() system("cls")
 #endif
@@ -57,7 +57,7 @@ int get_strnum(FILE *f){
 	return strnum;
 }
 //Парсинг сохраненных файлов
-Note *get_strs(FILE *f){
+Note *get_strs(FILE *f, const char *SAVE){
 	char ch;
 	int strs = get_strnum(f);
 	int size = strs * sizeof(int);				
@@ -103,7 +103,10 @@ Note *get_strs(FILE *f){
 		strcat(strarr[line], buff);
     }
 	//запись сохраненных координат категорий в структуру
-	FILE *conf = fopen("./.noteconf", "r");
+	char *confname = (char*) malloc((strlen(SAVE) + 8) * sizeof(char));
+	strcpy(confname, ".conf");
+	strcat(confname, SAVE);
+	FILE *conf = fopen(confname, "r");
 	if(conf != NULL){
 		fscanf(conf, "%d", &note->catnum);
 		note->categ = (int**) malloc(sizeof(int*));
@@ -127,6 +130,7 @@ Note *get_strs(FILE *f){
 	note->llen = (int*) malloc(size);
 	memcpy(note->llen, len, size);
     free(len);
+	free(confname);
 	return note;
 }
 
@@ -136,8 +140,19 @@ void show_list(FILE *f, Note *note){
 	clear_win();
 	char ch;
     for(int i = 0; i < note->lines; i++){
-        printf("%d. %s", i, note->list[i]);
-    }
+		bool categ = 0;
+		for(int k = 0; k < note->catnum; k++){
+			if(i == note->categ[k][0] || i == note->categ[k][1]){
+				printf("%s", note->list[i]);
+				categ = 1;
+				break;
+			}
+		}
+		if(!categ){
+			printf("%d. %s", i, note->list[i]);
+		}
+	}
+		
 	enter_press();
 }
 
@@ -183,6 +198,12 @@ void add_item(Note *note){
 }
 
 void delete_item(int num, Note *note){
+	for(int i = 0; i < note->catnum; i++)
+		if(note->categ[i][0] == num || note->categ[i][1] == num){
+			printf("Cant delete lines, that was reservaited for categories\n");
+			enter_press();
+			return;
+		}
 	note->lines--;
 	free(note->list[num]);
 	for(int i = num; i < note->lines; i++){
@@ -333,7 +354,10 @@ void save_list(FILE *f, Note *note, const char *SAVE){
 		fprintf(f, "%s", note->list[i]);
 	}
 	//сохрание файла с категориями
-	FILE *conf = fopen("./.noteconf", "w");
+	char *confname = (char*) malloc((strlen(SAVE) + 6) * sizeof(char));
+	strcpy(confname, ".conf");
+	strcat(confname, SAVE);
+	FILE *conf = fopen(confname, "w");
 	char *temp = (char*) malloc(note->catnum * sizeof(char));
 	sprintf(temp, "%d", note->catnum);
 	fputs(temp, conf);
@@ -341,6 +365,7 @@ void save_list(FILE *f, Note *note, const char *SAVE){
 		fprintf(conf, " %d %d", note->categ[i][0], note->categ[i][1]);
 	}
 	fclose(conf);
+	free(confname);
 	free(temp);
 }
 
@@ -352,7 +377,7 @@ int main(int argc, char **argv){
     FILE *f;
 	const char *SAVE = "list";
 	f = fopen(SAVE, "ab+");
-    Note *note = get_strs(f);
+    Note *note = get_strs(f, SAVE);
 	if(note == NULL){
 		
 	}
