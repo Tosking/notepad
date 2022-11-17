@@ -4,8 +4,9 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <mcheck.h>
 #if defined(unix) || defined(__unix__) || defined(__unix)
-	#define clear_win() system("clear")
+	#define clear_win() system("clear") //system("clear")
 #elif defined(_WIN32)
 	#define clear_win() system("cls")
 #endif
@@ -53,7 +54,7 @@ Note *get_strs(FILE *f){
     len[0] = 1;
 	int snum = 0;
 	while((ch = fgetc(f)) != EOF){
-		if(strs == (snum + 1)){
+		if(strs == snum + 1){
 			break;
 		}
 		if(ch == '\n'){
@@ -65,10 +66,10 @@ Note *get_strs(FILE *f){
 		}
 	}
     rewind(f);
-    char **strarr = (char**) malloc(sizeof(char*) * strs);
+    char **strarr = (char**) malloc(sizeof(char*) * (strs + 1));
     for(int i = 0; i < strs; i++){
-        strarr[i] = (char*) malloc(sizeof(char) * len[i]);
-        memset(strarr[i], 0, len[i]);
+        strarr[i] = (char*) malloc(sizeof(char) * len[i] + 10);
+        memset(strarr[i], 0, len[i] - 1);
     }
 	Note *note = (Note*) malloc(sizeof(Note));
     char buff[2];
@@ -91,13 +92,13 @@ Note *get_strs(FILE *f){
 	if(conf != NULL){
 		fscanf(conf, "%d", &note->catnum);
 		note->categ = (int**) malloc(sizeof(int*));
-		note->categ[0] = (int*) malloc(sizeof(int));
+		note->categ[0] = (int*) malloc(sizeof(int) * 2);
 		for(int i = 0; i < note->catnum; i++){
 			fscanf(conf, "%d %d", &note->categ[i][0], &note->categ[i][1]);
-			int **temp = (int**) realloc(note->categ, sizeof(int*) * (i + 1));
+			int **temp = (int**) realloc(note->categ, sizeof(int*) * (i + 2));
 			if(temp != NULL){
 				note->categ = temp;
-				note->categ[i+1] = (int*) malloc(sizeof(int));
+				note->categ[i+1] = (int*) malloc(sizeof(int) * 2);
 			}
 			else{
 				fclose(conf);
@@ -107,11 +108,9 @@ Note *get_strs(FILE *f){
 		fclose(conf);
 	}
     note->lines = strs;
-	note->list = (char**) malloc(strs * sizeof(char*));
+	note->list = strarr;
 	note->llen = (int*) malloc(size);
 	memcpy(note->llen, len, size);
-	memcpy(note->list, strarr, strs * sizeof(char*));
-	free(strarr);
     free(len);
 	return note;
 }
@@ -186,12 +185,17 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 		enter_press();
 		return;
 	}
+	for(int i = 0; i < note->catnum; i++){
+		if((note->categ[i][0] <= start_num && note->categ[i][1] >= start_num) || (note->categ[i][0] <= end_num && note->categ[i][1] >= end_num)){
+			printf("New category cannot cross other categories\n");
+			return;
+		}
+	}
 
 	char ch;
 	note->lines += 2;
-	bool steps = 0;
 
-	char **temp = (char**) realloc(note->list, note->lines * sizeof(char*));
+	char **temp = (char**) realloc(note->list, (note->lines + 1) * sizeof(char*) );
 	if(temp != NULL){
 		note->list = temp;
 	}
@@ -199,21 +203,31 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 		printf("realloc failed\n");
 		return;
 	}
+	//Смещение координат всех других категорий
+	if(note->catnum != 0){
+		for(int i = 0; i < note->catnum; i++){
+			if(note->categ[i][0] <= start_num){
+				note->categ[i][0]++;
+				note->categ[i][1]++;
+			}
+		}
+	}
 	
     for(int i = 0; i < note->lines; i++){
         if(start_num == i){
 			for(int k = note->lines; k >= i; k--) {
 				note->list[k + 1] = note->list[k];
 			}
-			note->list[i] = (char*)malloc(sizeof(char) * (strlen(name) + 3));
+			note->list[i] = (char*)malloc(sizeof(char) * (strlen(name) + 5));
 			memset(note->list[i], 0, sizeof(char) * (strlen(name) + 3));
 			strcat(note->list[i], ":::");
 			strcat(note->list[i], name);
 			strcat(note->list[i], "\n");
 		}
 		else if(end_num == i){
-			for(int k = note->lines; k >= i; k--) note->list[k + 1] = note->list[k];
-			note->list[i] = (char *) malloc(sizeof(char) * 4);
+			for(int k = note->lines; k >= i; k--) 
+				note->list[k + 1] = note->list[k];
+			note->list[i] = (char *) malloc(sizeof(char) * 5);
 			memset(note->list[i], 0, sizeof(char) * 4);
 			strcat(note->list[i], "---");
 			strcat(note->list[i], "\n");
@@ -222,6 +236,7 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 	note->catnum++;
 	if(note->catnum != 1){
 		note->categ = (int**) realloc(note->categ, note->catnum * sizeof(int*));
+		note->categ[note->catnum - 1] = (int *) malloc(sizeof(int) * 2);
 		note->categ[note->catnum - 1][0] = start_num;
 		note->categ[note->catnum - 1][1] = end_num;
 	}
