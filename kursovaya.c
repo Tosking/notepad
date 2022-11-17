@@ -79,9 +79,9 @@ Note *get_strs(FILE *f, const char *SAVE){
 	}
     rewind(f);
 	//выделение памяти под строки
-    char **strarr = (char**) malloc(sizeof(char*) * (strs + 1));
+    char **strarr = (char**) malloc(sizeof(char*) * (strs + 2));
     for(int i = 0; i < strs; i++){
-        strarr[i] = (char*) malloc(sizeof(char) * len[i] + 10);
+        strarr[i] = (char*) malloc(sizeof(char) * len[i] + 20);
         memset(strarr[i], 0, len[i] - 1);
     }
 	Note *note = (Note*) malloc(sizeof(Note));
@@ -103,7 +103,7 @@ Note *get_strs(FILE *f, const char *SAVE){
 		strcat(strarr[line], buff);
     }
 	//запись сохраненных координат категорий в структуру
-	char *confname = (char*) malloc((strlen(SAVE) + 8) * sizeof(char));
+	char confname[100];
 	strcpy(confname, ".conf");
 	strcat(confname, SAVE);
 	FILE *conf = fopen(confname, "r");
@@ -130,7 +130,6 @@ Note *get_strs(FILE *f, const char *SAVE){
 	note->llen = (int*) malloc(size);
 	memcpy(note->llen, len, size);
     free(len);
-	free(confname);
 	return note;
 }
 
@@ -152,17 +151,16 @@ void show_list(FILE *f, Note *note){
 			printf("%d. %s", i, note->list[i]);
 		}
 	}
-		
-	enter_press();
 }
 
 void show_menu(){
-	clear_win();
 	printf("1.Show list \
 			\n2.Add item to a list \
 			\n3.Delete one item from list \
 			\n4.Create a category \
 			\n5.Delete category \
+			\n6.Open file \
+			\n7.Save file \
 			\n");
 }
 
@@ -348,7 +346,8 @@ void delete_category(FILE* f, char* name, Note *note){
 
 void save_list(FILE *f, Note *note, const char *SAVE){
 	//сохранение листа
-	fclose(f);
+	if(f != NULL)
+		fclose(f);
 	f = fopen(SAVE, "w");
 	for(int i = 0; i < note->lines; i++){
 		fprintf(f, "%s", note->list[i]);
@@ -374,24 +373,29 @@ int main(int argc, char **argv){
         printf("No file input");
         return 1;
     }
-    FILE *f;
-	const char *SAVE = "list";
-	f = fopen(SAVE, "ab+");
-    Note *note = get_strs(f, SAVE);
+    FILE *f = NULL;
+	char SAVE[100];
+	memset(SAVE, 0, 100);
+    Note *note = (Note*) malloc(sizeof(Note));
+	note->list = (char**) malloc(sizeof(char*));
+	note->lines = 0;
 	if(note == NULL){
 		
 	}
-	fclose(f);
 	bool run = 1;
+	char name[100];
 	while(run){
+		clear_win();
 		int var;
-		f = fopen(SAVE, "ab+");
-		if(f == NULL){
-			continue;
+		if(note->lines == 0){
+			printf("**LIST EMPTY**\n\n");
+		}
+		else{
+			show_list(f, note);
+			printf("\n\n");
 		}
 		show_menu();
 		scanf("%d", &var);
-		clear_win();
 		switch (var){
 			case 1:
 				show_list(f, note);
@@ -407,8 +411,7 @@ int main(int argc, char **argv){
 				break;
 			case 4:
 				printf("Enter a numbers where category starts and ends, and a name of the category:");
-				int start_num, end_num;
-				char name[100]; 
+				int start_num, end_num; 
 				scanf("%d%d%s", &start_num, &end_num, &name);
 				create_category(f, start_num, end_num, name, SAVE, note);
 				break;
@@ -418,8 +421,23 @@ int main(int argc, char **argv){
 				scanf("%s", &name);
 				delete_category(f, name, note);
 				break;
+			case 6:
+				printf("Enter name of a file:");
+				scanf("%s", SAVE);
+				free(note);
+				if(f != NULL)
+					fclose(f);
+				f = fopen(SAVE, "ab+");
+				note = get_strs(f, SAVE);
+				break;
+			case 7:
+				printf("Enter name of a file:");
+				scanf("%s", SAVE);
+				if(f != NULL)
+					fclose(f);
+				f = fopen("./lol", "ab+");
+				save_list(f, note, "./lol");
+				break;
 		}
-		save_list(f, note, SAVE);
-		fclose(f);
 	}
 }
