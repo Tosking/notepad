@@ -268,8 +268,9 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 }
 
 void delete_category(FILE* f, char* name, Note *note){
-	int *coords = (int*) malloc(sizeof(int) * 2);
+	int coords[2];
 	int found;
+	int num = 0;
 	//поиск координат по имени
 	for(int i = 0; i < note->catnum; i++){
 		found = 1;
@@ -280,14 +281,13 @@ void delete_category(FILE* f, char* name, Note *note){
 			}
 		}
 		if(found){
-			memcpy(coords, &note->categ[i], sizeof(int) * 2);
+			coords[0] = note->categ[i][0];
+			coords[1] = note->categ[i][1];
+			num = i;
 			break;
 		}
-		else{
-			coords = NULL;
-		}
 	}
-	if(coords == NULL){
+	if(!found){
 		printf("category with that name is not found\n");
 		return;
 	}
@@ -306,9 +306,22 @@ void delete_category(FILE* f, char* name, Note *note){
 			}
 		}
 	}
+	//сдвиг координат в массиве
+	for(int i = num; i < (note->catnum - 1); i++){
+		note->categ[i] = note->categ[i + 1];
+	}
 
+	note->catnum--;
 	note->lines -= 2;
-	free(coords);
+	//сдвиг координат остальных категорий
+	if(note->catnum != 0){
+		for(int i = 0; i < note->catnum; i++){
+			if(note->categ[i][0] >= coords[0]){
+				note->categ[i][0] -= 2;
+				note->categ[i][1] -= 2;
+			}
+		}
+	}
 
 }
 
