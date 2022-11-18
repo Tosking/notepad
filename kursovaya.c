@@ -135,7 +135,7 @@ Note *get_strs(FILE *f, const char *SAVE){
 
 
 //вывод листа на экран
-void show_list(FILE *f, Note *note){
+void show_list(Note *note){
 	clear_win();
 	char ch;
     for(int i = 0; i < note->lines; i++){
@@ -209,7 +209,7 @@ void delete_item(int num, Note *note){
 	}
 }
 
-void create_category(FILE *f, int start_num, int end_num, char *name, const char *SAVE, Note *note){
+void create_category(int start_num, int end_num, char *name, const char *SAVE, Note *note){
 	//проверки на корректность ввода
 	if(start_num >= end_num){
 		printf("Start number and end number is equal or start number is larger\n");
@@ -286,7 +286,7 @@ void create_category(FILE *f, int start_num, int end_num, char *name, const char
 	}
 }
 
-void delete_category(FILE* f, char* name, Note *note){
+void delete_category(char* name, Note *note){
 	int coords[2];
 	int found;
 	int num = 0;
@@ -363,6 +363,7 @@ void save_list(FILE *f, Note *note, const char *SAVE){
 	for(int i = 0; i < note->catnum; i++){
 		fprintf(conf, " %d %d", note->categ[i][0], note->categ[i][1]);
 	}
+	fclose(f);
 	fclose(conf);
 	free(confname);
 	free(temp);
@@ -413,13 +414,13 @@ int main(int argc, char **argv){
 				printf("Enter a numbers where category starts and ends, and a name of the category:");
 				int start_num, end_num; 
 				scanf("%d%d%s", &start_num, &end_num, &name);
-				create_category(f, start_num, end_num, name, SAVE, note);
+				create_category(start_num, end_num, name, SAVE, note);
 				break;
 			case 5:
 				printf("Enter the name of a category than you want do delete:");
 				memset(name, 0, 100);
 				scanf("%s", &name);
-				delete_category(f, name, note);
+				delete_category(name, note);
 				break;
 			case 6:
 				printf("Enter name of a file:");
@@ -435,8 +436,8 @@ int main(int argc, char **argv){
 				scanf("%s", SAVE);
 				if(f != NULL)
 					fclose(f);
-				f = fopen("./lol", "ab+");
-				save_list(f, note, "./lol");
+				f = fopen(SAVE, "ab+");
+				save_list(f, note, SAVE);
 				break;
 		}
 	}
