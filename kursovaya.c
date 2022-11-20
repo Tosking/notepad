@@ -42,6 +42,19 @@ int get_fsize(FILE *f){
 	rewind(f);
     return size;
 }
+//освобождение памяти
+void free_note(Note *note){
+	for(int i = 0; i < note->lines; i++){
+		free(note->list[i]);
+	}
+	free(note->list);
+	for(int i = 0; i < note->catnum; i++){
+		free(note->categ[i]);
+	}
+	free(note->categ);
+	free(note->llen);
+	free(note);
+}
 
 //получение кол-ва строк
 int get_strnum(FILE *f){
@@ -80,9 +93,9 @@ Note *get_strs(FILE *f, const char *SAVE){
     rewind(f);
 	//выделение памяти под строки
     char **strarr = (char**) malloc(sizeof(char*) * (strs + 2));
-    for(int i = 0; i < strs; i++){
+    for(int i = 0; i <= strs; i++){
         strarr[i] = (char*) malloc(sizeof(char) * len[i] + 20);
-        memset(strarr[i], 0, len[i] - 1);
+        memset(strarr[i], 0, len[i] + 1);
     }
 	Note *note = (Note*) malloc(sizeof(Note));
 	//запись строк в структуру
@@ -392,14 +405,14 @@ int main(int argc, char **argv){
 			printf("**LIST EMPTY**\n\n");
 		}
 		else{
-			show_list(f, note);
+			show_list(note);
 			printf("\n\n");
 		}
 		show_menu();
 		scanf("%d", &var);
 		switch (var){
 			case 1:
-				show_list(f, note);
+				show_list(note);
 				break;
 			case 2:
 				add_item(note);
@@ -425,7 +438,7 @@ int main(int argc, char **argv){
 			case 6:
 				printf("Enter name of a file:");
 				scanf("%s", SAVE);
-				free(note);
+				free_note(note);
 				if(f != NULL)
 					fclose(f);
 				f = fopen(SAVE, "ab+");
