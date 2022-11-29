@@ -176,11 +176,31 @@ void show_menu(){
 			\n7.Save file \
 			\n");
 }
-
+/*
+TODO:
+ошибка при создании категории с распределением памяти
+fgets(buf, 100, stdin) - добавить в добавление элемента, если в конце нет перевода строки, то считать ещё раз
+*/
 void add_item(Note *note){
 	printf("Type item:");
 	char *buffer = (char*) malloc(sizeof(char) * 100);
-	scanf("%s", buffer);
+	fflush(stdin);
+	getchar();
+	fgets(buffer, 100, stdin);
+	int i = 0;
+	char *buf;
+	while(*(buffer + strlen(buffer) - 1) != '\n'){
+		if((buf = realloc(buffer, 100 * i)) == NULL){
+			printf("realloc failed");
+			return;
+		}
+		else{
+			buffer = buf;
+		}
+		fgets(buffer, 100, stdin);
+		i++;
+	}
+	*(buffer + strlen(buffer) -1) = '\0';
 	if(strlen(buffer) == 0){
 		printf("Item is empty!\n");
 		enter_press();
