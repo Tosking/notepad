@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-#include <mcheck.h>
 //Адаптация очистки терминала под Windows и Unix системы
 #if defined(unix) || defined(__unix__) || defined(__unix)
 	#define clear_win() system("clear")
@@ -183,21 +181,25 @@ fgets(buf, 100, stdin) - добавить в добавление элемент
 */
 void add_item(Note *note){
 	printf("Type item:");
-	char *buffer = (char*) malloc(sizeof(char) * 100);
+	const int SIZE = 10;
+	const int SIZE_TIME = 30;
+	char *buffer = (char*) malloc(sizeof(char) * (SIZE + SIZE_TIME));
 	fflush(stdin);
 	getchar();
-	fgets(buffer, 100, stdin);
-	int i = 0;
+	fgets(buffer, SIZE, stdin);
+	int i = 1;
 	char *buf;
 	while(*(buffer + strlen(buffer) - 1) != '\n'){
-		if((buf = realloc(buffer, 100 * i)) == NULL){
-			printf("realloc failed");
+		buf = realloc(buffer, (SIZE + SIZE_TIME) * (i + 1));
+		if(buf == NULL){
+			printf("realloc failed\n");
+			enter_press();
 			return;
 		}
 		else{
 			buffer = buf;
 		}
-		fgets(buffer, 100, stdin);
+		fgets((buffer + i * SIZE - 1), SIZE + 1, stdin);
 		i++;
 	}
 	*(buffer + strlen(buffer) -1) = '\0';
@@ -229,6 +231,11 @@ void add_item(Note *note){
 }
 
 void delete_item(int num, Note *note){
+	if(num < 0 || num >= note->lines){
+		printf("Invalid index!\n");
+		enter_press();
+		return;
+	}
 	for(int i = 0; i < note->catnum; i++)
 		if(note->categ[i][0] == num || note->categ[i][1] == num){
 			printf("Cant delete lines, that was reservaited for categories\n");
@@ -265,7 +272,7 @@ void create_category(int start_num, int end_num, char *name, const char *SAVE, N
 	char ch;
 	note->lines += 2;
 
-	char **temp = (char**) realloc(note->list, (note->lines + 1) * sizeof(char*) );
+	char **temp = (char**) realloc(note->list, (note->lines + 2) * sizeof(char*) );
 	if(temp != NULL){
 		note->list = temp;
 	}
